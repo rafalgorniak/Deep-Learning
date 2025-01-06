@@ -14,7 +14,7 @@ class CelebAModel:
         patience = 5  # Number of epochs to wait before stopping
         min_delta = 0.002  # Minimum change in loss to qualify as an improvement
         patience_counter = 0
-        best_val_accuracy = float('inf')
+        best_val_accuracy = float('-inf')
 
         for epoch in range(num_epochs):
             running_loss = 0.0
