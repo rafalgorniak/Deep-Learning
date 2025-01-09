@@ -1,8 +1,10 @@
 import torch
+from torch import nn
 
 
-class CelebAModel:
+class Model(nn.Module):
     def __init__(self, model, criterion, optimizer, device='cpu'):
+        super(Model, self).__init__()
         self.model = model.to(device)
         self.criterion = criterion
         self.optimizer = optimizer
@@ -11,7 +13,7 @@ class CelebAModel:
     def fit(self, train_loader, val_loader=None, num_epochs=10):
         self.model.train()
 
-        patience = 5  # Number of epochs to wait before stopping
+        patience = 3  # Number of epochs to wait before stopping
         min_delta = 0.002  # Minimum change in loss to qualify as an improvement
         patience_counter = 0
         best_val_accuracy = float('-inf')
@@ -35,7 +37,7 @@ class CelebAModel:
 
                 running_loss += loss.item()
 
-            print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss/len(train_loader):.4f}")
+            print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {running_loss / len(train_loader):.4f}")
 
             if val_loader:
                 val_accuracy = self.evaluate(val_loader)
@@ -87,3 +89,16 @@ class CelebAModel:
                 total += labels.size(0)  # Count total samples
 
         return correct / total  # Return accuracy as a fraction
+
+    def probability(self, images):
+        self.model.eval()
+
+        with torch.no_grad():
+            # Ensure images are on the correct device
+            images = images.to(self.device)
+
+            # Forward pass
+            outputs = self.model(images)
+            predictions = torch.sigmoid(outputs)
+
+        return predictions
