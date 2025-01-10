@@ -9,11 +9,13 @@ class SymbolLSTMModel(nn.Module):
                             hidden_size=hidden_dimensions,
                             num_layers=num_layers,
                             batch_first=True)
+        self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(hidden_dimensions, unique_symbols_count)
         
     def forward(self, x, hidden=None):
-        embedded = self.embedding(x)
+        embedded = self.dropout(self.embedding(x))
         output, hidden = self.lstm(embedded, hidden)
+        output = self.dropout(output)
         logits = self.fc(output)
         
         return logits, hidden
