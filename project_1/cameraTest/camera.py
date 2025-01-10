@@ -6,7 +6,7 @@ from torchvision import transforms
 
 def detect(frame, detector):
     detections = detector.detect_multi_scale(img=frame, scale_factor=1.2, step_ratio=1,
-                                             min_size=(100, 100), max_size=(200, 200))
+                                             min_size=(100, 100), max_size=(300, 300))
     boxes = []
     for detection in detections:
         x = detection['c']
@@ -28,7 +28,7 @@ def draw(frame, boxes, probabilities=None):
 
 def preprocess_face(frame, box, transform):
     x, y, w, h = box
-    cropped_face = frame[y:y + h, x:x + w]
+    cropped_face = frame[y:y + h + 100, x:x + w + 100]
     cropped_face = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2RGB)
     cropped_face = cv2.resize(cropped_face, (64, 64))
     cropped_face = transform(cropped_face)
