@@ -33,7 +33,7 @@ def load_celeba_dataset(data_dir, batch_size=32, image_size=64, split='train', s
         split=split,
         transform=transform,
         target_transform=target_transform,
-        download=True
+        download=False
     )
 
     if subset_size is not None:
@@ -44,7 +44,7 @@ def load_celeba_dataset(data_dir, batch_size=32, image_size=64, split='train', s
     return data_loader
 
 
-def load_celeba_pretrained_dataset(data_dir, batch_size=32, image_size=64, split='train', subset_size=None):
+def load_celeba_pretrained_dataset(data_dir, batch_size=32, image_size=224, split='train', subset_size=None):
     # Transformacje dla obrazów, zmiana rozdzielczości i jakaś normalizacja do wartości [-1,1]
 
     if split == 'train':
@@ -72,7 +72,7 @@ def load_celeba_pretrained_dataset(data_dir, batch_size=32, image_size=64, split
         split=split,
         transform=transform,
         target_transform=target_transform,
-        download=True
+        download=False
     )
 
     if subset_size is not None:
@@ -100,6 +100,7 @@ def load_wiederface_dataset():
 
 def load_wiederface_pretrained_dataset():
     transform = transforms.Compose([
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
@@ -132,6 +133,14 @@ def load_dataset(dataset, subset_size=1):
         train_loader = None
         valid_loader = None
         test_loader = load_wiederface_dataset()
+    elif dataset == 'CelebA_pretrained':
+        train_loader = load_celeba_pretrained_dataset(data_dir="./data", batch_size=64, split='train', subset_size=subset_size)
+        valid_loader = load_celeba_pretrained_dataset(data_dir="./data", batch_size=64, split='valid', subset_size=subset_size)
+        test_loader = load_celeba_pretrained_dataset(data_dir="./data", batch_size=64, split='test', subset_size=subset_size)
+    elif dataset == 'WIDERFace_pretrained':
+        train_loader = None
+        valid_loader = None
+        test_loader = load_wiederface_pretrained_dataset()
     else:
         raise NotImplementedError
 
