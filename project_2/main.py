@@ -8,7 +8,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from TextDataset import TextDataset
 from project_2.SymbolLSTMModel import SymbolLSTMModel
-from project_2.model_functionalities import generate_text, train_and_save_model
+from project_2.model_functionalities import generate_text, train_and_save_model, evaluate_model
 
 model_path = "symbol_lstm_model.pth"
 
@@ -58,9 +58,10 @@ embedding_dimensions = 128
 hidden_dimensions = 256
 num_layers = 1
 learning_rate = 0.001
-num_epochs = 5
+num_epochs = 50
 num_symbols = 200
 temperature = 0.5
+patience = 2
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -78,7 +79,20 @@ if os.path.exists(model_path):
     model.to(device)
 else:
     print("No model found. Training a new model.")
-    train_and_save_model(model, train_loader, criterion, optimizer, num_epochs, model_path, unique_symbols_count)
+    train_and_save_model(
+        model=model,
+        train_loader=train_loader,
+        val_loader=validation_loader,
+        criterion=criterion,
+        optimizer=optimizer,
+        num_epochs=num_epochs,
+        model_path=model_path,
+        unique_symbols_count=unique_symbols_count,
+        patience=patience
+    )
+
+test_loss, test_acc, top3_acc = evaluate_model(model, test_loader, unique_symbols_count, device)
+print(f"Model Information - test loss: {test_loss:.4f}, test accuracy: {test_acc:.4f}, top-3 accuracy: {top3_acc:.4f}")
 
 start_text = "gerwazy"
 generated_text = generate_text(
