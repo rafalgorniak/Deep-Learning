@@ -9,51 +9,13 @@ from torch.utils.data import DataLoader
 from TextDataset import TextDataset
 from project_2.SymbolLSTMModel import SymbolLSTMModel
 from project_2.model_functionalities import generate_text, train_and_save_model, evaluate_model
+from project_2.text_handling import preprocess_text, split_text, encode_text
 
+# Params
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = "symbol_lstm_model.pth"
-
-with open ("pantadeusz.txt", "r", encoding="utf-8") as file:
-    unmodified_text: str = file.read()
-
-text: str = re.sub(r'\s+', ' ', unmodified_text)
-text: str = text.strip().lower()
-
-unique_symbols: list[str] = sorted(list(set(text)))
-unique_symbols_count: int = len(unique_symbols)
-
-symbol_to_index: dict[str, int] = { symbol: i for i, symbol in enumerate(unique_symbols) }
-index_to_symbol: dict[int, str] = { i: symbol for i, symbol in enumerate(unique_symbols) }
-
-data_size: int = len(text)
-train_size: int = int(0.8 * data_size)
-validation_size: int = int(0.1 * data_size)
-
-train_text: str = text[:train_size]
-validation_text: str = text[train_size:train_size+validation_size]
-test_text: str = text[train_size+validation_size:]
-
-def encode_text(text: str, symbol_to_index: dict[str, int]):
-    encoded_text: list = []
-    for symbol in text:
-        encoded_text.append(symbol_to_index[symbol])
-
-    return encoded_text
-
-train_encoded_text_list: list[str] = encode_text(train_text, symbol_to_index)
-validation_encoded_text_list: list[str] = encode_text(validation_text, symbol_to_index)
-test_encoded_text_list: list[str] = encode_text(test_text, symbol_to_index)
-
 sequence_length = 30
 batch_size = 64
-
-train_dataset = TextDataset(train_encoded_text_list, sequence_length)
-validation_dataset = TextDataset(validation_encoded_text_list, sequence_length)
-test_dataset = TextDataset(test_encoded_text_list, sequence_length)
-
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
 embedding_dimensions = 128
 hidden_dimensions = 256
 num_layers = 1
@@ -63,7 +25,22 @@ num_symbols = 200
 temperature = 0.5
 patience = 2
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+text, unique_symbols, symbol_to_index, index_to_symbol = preprocess_text("pantadeusz.txt")
+unique_symbols_count = len(unique_symbols)
+
+train_text, validation_text, test_text = split_text(text)
+
+train_encoded_text_list: list[str] = encode_text(train_text, symbol_to_index)
+validation_encoded_text_list: list[str] = encode_text(validation_text, symbol_to_index)
+test_encoded_text_list: list[str] = encode_text(test_text, symbol_to_index)
+
+train_dataset = TextDataset(train_encoded_text_list, sequence_length)
+validation_dataset = TextDataset(validation_encoded_text_list, sequence_length)
+test_dataset = TextDataset(test_encoded_text_list, sequence_length)
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 model = SymbolLSTMModel(
     unique_symbols_count=unique_symbols_count,

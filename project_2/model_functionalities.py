@@ -85,6 +85,7 @@ def generate_text(model, start_text: str, symbol_to_index: dict[str, int], index
 
     return generated_text
 
+
 def evaluate_model(model, data_loader, unique_symbols_count, device):
     accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=unique_symbols_count).to(device)
     top3_accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=unique_symbols_count, top_k=3).to(device)
