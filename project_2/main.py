@@ -1,6 +1,4 @@
 import os
-import re
-
 import torch.cuda
 import torch.optim as optim
 from torch import nn
@@ -8,6 +6,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from TextDataset import TextDataset
 from project_2.SymbolLSTMModel import SymbolLSTMModel
+from project_2.SymbolTransformerModel import SymbolTransformerModel
 from project_2.model_functionalities import generate_text, train_and_save_model, evaluate_model
 from project_2.text_handling import preprocess_text, split_text, encode_text
 
@@ -46,6 +45,14 @@ model = SymbolLSTMModel(
     unique_symbols_count=unique_symbols_count,
     embedding_dimensions=embedding_dimensions,
     hidden_dimensions=hidden_dimensions).to(device)
+
+#model = SymbolTransformerModel(
+#    unique_symbols_count=unique_symbols_count,
+#    embedding_dimensions=embedding_dimensions,
+#    num_layers=num_layers,
+#    num_heads=4,
+#    dropout_rate=0.2
+#).to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)

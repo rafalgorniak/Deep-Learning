@@ -16,7 +16,13 @@ def train_and_save_model(model, train_loader, val_loader, criterion, optimizer,
         for x, y in train_loader:
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
-            logits, _ = model(x)
+            output = model(x)
+
+            if isinstance(output, tuple):
+                logits, _ = output
+            else:
+                logits = output
+
             logits = logits.view(-1, unique_symbols_count)
             y = y.view(-1)
             loss = criterion(logits, y)
@@ -32,7 +38,13 @@ def train_and_save_model(model, train_loader, val_loader, criterion, optimizer,
         with torch.no_grad():
             for x_val, y_val in val_loader:
                 x_val, y_val = x_val.to(device), y_val.to(device)
-                val_logits, _ = model(x_val)
+                output = model(x_val)
+
+                if isinstance(output, tuple):
+                    val_logits, _ = output
+                else:
+                    val_logits = output
+
                 val_logits = val_logits.view(-1, unique_symbols_count)
                 y_val = y_val.view(-1)
                 val_loss = criterion(val_logits, y_val)
@@ -55,7 +67,7 @@ def train_and_save_model(model, train_loader, val_loader, criterion, optimizer,
 
 
 def generate_text(model, start_text: str, symbol_to_index: dict[str, int], index_to_symbol: dict[int, str],
-        sequence_length: int, num_chars: int, temperature: float = 1.0) -> str:
+                  sequence_length: int, num_chars: int, temperature: float = 1.0) -> str:
     model.eval()
     device = next(model.parameters()).device
 
@@ -71,12 +83,16 @@ def generate_text(model, start_text: str, symbol_to_index: dict[str, int], index
         input_tensor = torch.tensor([input_seq], dtype=torch.long).to(device)
 
         with torch.no_grad():
-            logits, _ = model(input_tensor)
+            output = model(input_tensor)
+            if isinstance(output, tuple):
+                logits, _ = output
+            else:
+                logits = output
+
             logits = logits[:, -1, :]
             logits = logits / temperature
 
             probabilities = torch.softmax(logits, dim=-1).squeeze()
-
             next_index = torch.multinomial(probabilities, num_samples=1).item()
 
         next_symbol = index_to_symbol[next_index]
@@ -97,7 +113,12 @@ def evaluate_model(model, data_loader, unique_symbols_count, device):
     with torch.no_grad():
         for x, y in data_loader:
             x, y = x.to(device), y.to(device)
-            logits, _ = model(x)
+            output = model(x)
+            if isinstance(output, tuple):
+                logits, _ = output
+            else:
+                logits = output
+
             logits = logits.view(-1, unique_symbols_count)
             y = y.view(-1)
 
