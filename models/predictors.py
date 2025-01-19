@@ -1,6 +1,16 @@
 from torch import nn
 import torch.nn.functional as F
 
+
+class LinearPredictor(nn.Module):
+    def __init__(self, input_dim, output_dim=1):
+        super(LinearPredictor, self).__init__()
+        self.linear = nn.Linear(input_dim, output_dim)
+
+    def forward(self, x):
+        return self.linear(x)
+
+
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dim=64, output_dim=1):
         super(MLP, self).__init__()

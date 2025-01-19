@@ -1,8 +1,7 @@
 from torch import nn
 
-from GNN.GNNEncoder import GNNEncoder
-from GNN.LinearPredictor import LinearPredictor
-from GNN.MLP import MLP
+from models.gnn_encoder import GNNEncoder
+from models.predictors import LinearPredictor, MLP
 
 
 class GNNModel(nn.Module):
