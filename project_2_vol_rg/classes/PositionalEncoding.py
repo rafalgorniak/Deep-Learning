@@ -12,7 +12,7 @@ class PositionalEncoding(nn.Module):
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         self.encoding[:, 0::2] = torch.sin(position * div_term)
         self.encoding[:, 1::2] = torch.cos(position * div_term)
-        self.encoding = self.encoding.unsqueeze(0)  # Add batch dimension
+        self.encoding = self.encoding.unsqueeze(0)
 
     def forward(self, x):
         seq_len = x.size(1)
