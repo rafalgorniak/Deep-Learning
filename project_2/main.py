@@ -6,18 +6,18 @@ from torch import nn
 from torch.utils.data import DataLoader
 from TextDataset import TextDataset
 from project_2.SymbolLSTMModel import SymbolLSTMModel
-from project_2.SymbolTransformerModel import SymbolTransformerModel
+from project_2.SymbolTransformerModel import SymbolTransformerDecoderModel
 from project_2.model_functionalities import generate_text, train_and_save_model, evaluate_model
 from project_2.text_handling import preprocess_text, split_text, encode_text
 
 # Params
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_path = "symbol_lstm_model.pth"
-sequence_length = 30
+model_path = "symbol_transformer_model.pth"
+sequence_length = 40
 batch_size = 64
 embedding_dimensions = 128
 hidden_dimensions = 256
-num_layers = 1
+num_layers = 2
 learning_rate = 0.001
 num_epochs = 50
 num_symbols = 200
@@ -41,18 +41,18 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-model = SymbolLSTMModel(
-    unique_symbols_count=unique_symbols_count,
-    embedding_dimensions=embedding_dimensions,
-    hidden_dimensions=hidden_dimensions).to(device)
+#model = SymbolLSTMModel(
+    #unique_symbols_count=unique_symbols_count,
+    #embedding_dimensions=embedding_dimensions,
+    #hidden_dimensions=hidden_dimensions).to(device)
 
-#model = SymbolTransformerModel(
-#    unique_symbols_count=unique_symbols_count,
-#    embedding_dimensions=embedding_dimensions,
-#    num_layers=num_layers,
-#    num_heads=4,
-#    dropout_rate=0.2
-#).to(device)
+model = SymbolTransformerDecoderModel(
+    vocabulary_size=unique_symbols_count,
+    embedding_dimensions=embedding_dimensions,
+    num_layers=1,
+    num_heads=4,
+    dropout_rate=0.2
+).to(device)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)

@@ -6,7 +6,7 @@ class SymbolLSTMModel(nn.Module):
                  unique_symbols_count: int,
                  embedding_dimensions: int,
                  hidden_dimensions: int,
-                 num_layers: int=1,
+                 num_layers: int=2,
                  dropout_rate: float = 0.2):
         super(SymbolLSTMModel, self).__init__()
         self.embedding = nn.Embedding(unique_symbols_count, embedding_dimensions)
