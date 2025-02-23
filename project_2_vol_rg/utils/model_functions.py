@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 
 def train_evaluate_save_model(model, criterion, optimizer, train_loader, val_loader, epochs, device, best_model_path,
@@ -41,7 +42,11 @@ def train(model, train_loader, criterion, optimizer, device):
 
         optimizer.zero_grad()
         outputs = model(inputs)
-        loss = criterion(outputs.view(-1, outputs.size(-1)), targets.view(-1))
+
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+
+        loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
@@ -54,13 +59,18 @@ def evaluate(model, val_loader, criterion, device):
     with torch.no_grad():
         for inputs, targets in val_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
-            loss = criterion(outputs.view(-1, outputs.size(-1)), targets.view(-1))
+            outputs = model(inputs)  # outputs: (batch_size, sequence_length, vocab_size)
+
+            # Spłaszcz outputs i targets
+            outputs = outputs.view(-1, outputs.size(-1))  # (batch_size * sequence_length, vocab_size)
+            targets = targets.view(-1)  # (batch_size * sequence_length)
+
+            loss = criterion(outputs, targets)
             total_loss += loss.item()
     return total_loss / len(val_loader)
 
 
-def generate_text(model, start_phrase, symbol_to_index, index_to_symbol, sequence_length, generate_length, device):
+def generate_text(model, start_phrase, symbol_to_index, index_to_symbol, sequence_length, generate_length, device, top_k=5):
     model.eval()  # Set the model to evaluation mode
 
     # Convert start_phrase to indices
@@ -82,16 +92,18 @@ def generate_text(model, start_phrase, symbol_to_index, index_to_symbol, sequenc
         with torch.no_grad():
             output = model(input_tensor)
 
-        # Get the prediction for the next character
+        # Get the prediction for the next character (top-k sampling)
         next_token_logits = output[0, -1, :]  # Take the last timestep's output
-        next_token_idx = torch.argmax(next_token_logits).item()  # Get the index of the highest probability
+        top_k_logits, top_k_indices = torch.topk(next_token_logits, k=top_k)
+        probs = F.softmax(top_k_logits, dim=-1)
+        next_token_idx = top_k_indices[torch.multinomial(probs, num_samples=1).item()]
 
         # Append the predicted character to the generated text
-        next_char = index_to_symbol[next_token_idx]
+        next_char = index_to_symbol[next_token_idx.item()]
         generated_text += next_char
 
         # Update the input sequence
-        input_indices = input_indices[1:] + [next_token_idx]  # Slide window
+        input_indices = input_indices[1:] + [next_token_idx.item()]  # Slide window
         input_tensor = torch.tensor([input_indices], dtype=torch.long).to(device)
 
     return generated_text
@@ -106,28 +118,31 @@ def evaluate_model_on_test(test_loader, model, criterion, symbol_to_index, index
     total_tokens = 0
 
     with torch.no_grad():
-        for batch in test_loader:
-            inputs, targets = batch
+        for inputs, targets in test_loader:
             inputs, targets = inputs.to(device), targets.to(device)
 
             # Forward pass
-            outputs = model(inputs)
+            outputs = model(inputs)  # outputs: (batch_size, sequence_length, vocab_size)
+
+            # Spłaszcz outputs i targets
+            outputs = outputs.view(-1, outputs.size(-1))  # (batch_size * sequence_length, vocab_size)
+            targets = targets.view(-1)  # (batch_size * sequence_length)
 
             # Oblicz stratę
-            loss = criterion(outputs.view(-1, outputs.size(-1)), targets.view(-1))
+            loss = criterion(outputs, targets)
             total_loss += loss.item()
 
-            # Predykcje
-            predictions = outputs.argmax(dim=-1)  # Najbardziej prawdopodobne tokeny
-            total_correct += (predictions == targets).sum().item()
+            # Obliczenie dokładności
+            predicted = torch.argmax(outputs, dim=-1)  # (batch_size * sequence_length)
+            total_correct += (predicted == targets).sum().item()
 
-            # Top-k Accuracy
-            top_k_predictions = torch.topk(outputs, k=top_k, dim=-1).indices
-            for target, top_k_preds in zip(targets.view(-1), top_k_predictions.view(-1, top_k)):
-                if target in top_k_preds:
+            # Obliczenie top-k dokładności
+            top_k_predictions = torch.topk(outputs, k=top_k, dim=-1).indices  # (batch_size * sequence_length, top_k)
+            for i in range(targets.size(0)):  # Iteracja po wszystkich tokenach
+                if targets[i].item() in top_k_predictions[i].tolist():
                     total_top_k_correct += 1
 
-            total_tokens += targets.numel()
+            total_tokens += targets.size(0)
 
     avg_loss = total_loss / len(test_loader)
     accuracy = total_correct / total_tokens

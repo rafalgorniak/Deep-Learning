@@ -10,8 +10,6 @@ from project_2_vol_rg.models.LSTMModel import LSTMModel
 from project_2_vol_rg.models.TransformerModel import TransformerModel
 from project_2_vol_rg.utils.data_utils import read_text_file, split_text, decode_text
 from project_2_vol_rg.utils.model_functions import train_evaluate_save_model, generate_text, evaluate_model_on_test
-from project_2_vol_rg.utils.transformer_utils import generate_text_transformer, evaluate_model_on_test_transformer, \
-    train_evaluate_save_model_transformer
 
 
 def main(model_type: str):
@@ -20,20 +18,24 @@ def main(model_type: str):
     input_text_path = './data/pantadeusz.txt'
     input_text_path = './data/ksiega_pierwsza.txt'
     model_path_lstm = './saved_models/LSTM_model.pth'
+    model_path_lstm_two_layers = './saved_models/LSTM_model_two_layers.pth'
     model_path_transformer = './saved_models/Transformer_model.pth'
 
     embedding_dim = 128
     hidden_dim = 256
-    lstm_layers = 1
-    batch_size = 64
+    lstm_layers = 2
+    batch_size = 128
 
     sequence_length = 100
     epoch_number = 20
-    learning_rate = 0.001
-    patience = 3
+    learning_rate = 0.0001
+    patience = 7
 
     n_head = 8
-    num_layers = 4
+
+    embedding_dim = 256  # Zwiększ wymiar embeddingu
+    hidden_dim = 1024  # Zwiększ wymiar warstwy ukrytej
+    num_layers = 6  # Zwiększ liczbę warstw
 
     text, dictionary, symbol_to_index, index_to_symbol = read_text_file(input_text_path)
     dictionary_size: int = len(dictionary)
@@ -66,18 +68,18 @@ def main(model_type: str):
 
         optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
 
-        if os.path.exists(model_path_lstm):
-            print(f"Loading model from {model_path_lstm}")
-            model.load_state_dict(torch.load(model_path_lstm, map_location=device))
+        if os.path.exists(model_path_lstm_two_layers):
+            print(f"Loading model from {model_path_lstm_two_layers}")
+            model.load_state_dict(torch.load(model_path_lstm_two_layers, map_location=device))
             model.to(device)
         else:
             print("No model found. Training a new model...")
             train_evaluate_save_model(model, criterion, optimizer, train_loader=train_loader,
                                       val_loader=validation_loader,
-                                      epochs=epoch_number, device=device, best_model_path=model_path_lstm,
+                                      epochs=epoch_number, device=device, best_model_path=model_path_lstm_two_layers,
                                       patience=patience)
 
-        start_phrase = "Litwo ojczyzno moja, ty jesteś jak zdrowie"
+        start_phrase = "Ksiądz robak powiedział"
         generate_length = 200
 
         generated_text = generate_text(
@@ -118,6 +120,7 @@ def main(model_type: str):
         ).to(device)
 
         optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         if os.path.exists(model_path_transformer):
             print(f"Loading model from {model_path_transformer}")
@@ -125,15 +128,15 @@ def main(model_type: str):
             model.to(device)
         else:
             print("No model found. Training a new model...")
-            train_evaluate_save_model_transformer(model, criterion, optimizer, train_loader=train_loader,
+            train_evaluate_save_model(model, criterion, optimizer, train_loader=train_loader,
                                       val_loader=validation_loader,
                                       epochs=epoch_number, device=device, best_model_path=model_path_transformer,
                                       patience=patience)
 
-        start_phrase = "Ksiądz robak"
-        generate_length = 200
+        start_phrase = "Litwo ojczyzno moja, ty jesteś jak zdrowie"
+        generate_length = 100
 
-        generated_text = generate_text_transformer(
+        generated_text = generate_text(
             model=model,
             start_phrase=start_phrase,
             symbol_to_index=symbol_to_index,
@@ -145,7 +148,7 @@ def main(model_type: str):
 
         print("Generated text:", generated_text)
 
-        avg_loss, accuracy, top_k_accuracy = evaluate_model_on_test_transformer(
+        avg_loss, accuracy, top_k_accuracy = evaluate_model_on_test(
             test_loader=test_loader,
             model=model,
             criterion=criterion,
@@ -162,5 +165,5 @@ def main(model_type: str):
 
 
 if __name__ == "__main__":
-    # main("LSTM")
-    main("Transformer")
+    main("LSTM")
+    # main("Transformer")
