@@ -20,7 +20,6 @@ class SymbolLSTMModel(nn.Module):
     def forward(self, x, hidden=None):
         embedded = self.dropout(self.embedding(x))
         output, hidden = self.lstm(embedded, hidden)
-        output = self.dropout(output)
         logits = self.fc(output)
         
         return logits, hidden
