@@ -204,7 +204,6 @@ def evaluate_regression(model, val_loader, criterion, device):
     return total_loss / len(val_loader)
 
 
-
 def get_embeddings(model, loader, device):
     model.eval()
     embeddings = []

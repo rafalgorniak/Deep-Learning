@@ -21,11 +21,8 @@ class Embedder(nn.Module):
         else:
             self.convs[0] = GCNConv(input_dim, embedding_dim)
 
-    def forward(self, x, edge_index, batch, edge_attr):
+    def forward(self, x, edge_index, batch):
         x = x.float()
-
-        if edge_attr is not None:
-            edge_attr = edge_attr.float()
 
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)

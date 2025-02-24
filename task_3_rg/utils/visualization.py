@@ -56,6 +56,7 @@ def plot_chart_train_phase(train_los, val_los, acc_metr, prec_metr, recc_metr, f
     plt.tight_layout()
     plt.show()
 
+
 def plot_chart_train_phase_regression(train_los, val_los, mae_met):
     epochs = list(range(1, len(train_los) + 1))
 
@@ -132,6 +133,9 @@ def visualize_decision_boundary_2d(predictor, embeddings, labels, title="Decisio
     x_min, x_max = embeddings[:, 0].min() - 0.1, embeddings[:, 0].max() + 0.1
     y_min, y_max = embeddings[:, 1].min() - 0.1, embeddings[:, 1].max() + 0.1
 
+    x = embeddings[:, 0]
+    y = embeddings[:, 1]
+
     xx, yy = np.meshgrid(np.linspace(x_min, x_max, 200),
                          np.linspace(y_min, y_max, 200))
     grid_points = np.column_stack([xx.ravel(), yy.ravel()])
@@ -148,8 +152,7 @@ def visualize_decision_boundary_2d(predictor, embeddings, labels, title="Decisio
     classes = np.unique(labels)
     for c in classes:
         idx = (labels == c)
-        ax.scatter(embeddings[idx, 0],
-                   embeddings[idx, 1],
+        ax.scatter(x[idx], y[idx],
                    label=f"Class {c}", alpha=0.8)
 
     ax.set_title(title)
